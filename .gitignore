@@ -1,0 +1,38 @@
+# 의존성
+node_modules/
+.pnp
+.pnp.*
+
+# 빌드 산출물
+.next/
+out/
+build/
+dist/
+*.tsbuildinfo
+next-env.d.ts
+
+# 환경변수 — public 저장소이므로 절대 커밋하지 않는다
+.env
+.env.*
+!.env.example
+
+# 로그
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 테스트/커버리지
+coverage/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# 에디터
+.vscode/
+.idea/
+*.swp
+
+# Vercel
+.vercel
