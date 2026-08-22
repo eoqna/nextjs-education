@@ -23,13 +23,27 @@ labs/01-rsc/node_modules/next/dist/docs/01-app/
 
 ## 목록
 
+### Getting Started
+
 | 문서 | 원문 | 관련 세션 |
 |---|---|---|
 | [폰트 최적화](getting-started/13-fonts.md) | `13-fonts.md` | S1 Q2 |
-| [링크와 네비게이션](getting-started/04-linking-and-navigating.md) | `04-linking-and-navigating.md` | S1 Q3 · S4 |
-| [프로젝트 구조](getting-started/02-project-structure.md) | `02-project-structure.md` | S1 Q4 |
+| [링크와 네비게이션](getting-started/04-linking-and-navigating.md) | `04-linking-and-navigating.md` | S1 Q3 · S3 |
+| [프로젝트 구조](getting-started/02-project-structure.md) | `02-project-structure.md` | S1 Q4 · S3 |
 | [레이아웃과 페이지](getting-started/03-layouts-and-pages.md) | `03-layouts-and-pages.md` | S1 Q3 · S2 |
 | [서버 컴포넌트와 클라이언트 컴포넌트](getting-started/05-server-and-client-components.md) | `05-server-and-client-components.md` | S1 Q1 · S6~S9 |
+
+### API Reference
+
+| 문서 | 원문 | 관련 세션 |
+|---|---|---|
+| [useLinkStatus](api-reference/functions/use-link-status.md) | `04-functions/use-link-status.md` | S3 |
+
+### 미번역 (참조했으나 아직 번역 안 함)
+
+| 문서 | 원문 | 관련 세션 |
+|---|---|---|
+| template.js | `03-file-conventions/template.md` | S2 |
 
 ## 원문 검색
 
