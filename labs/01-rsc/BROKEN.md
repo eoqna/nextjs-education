@@ -25,4 +25,50 @@ Error: app/error-test/page-error/error.tsx must be a Client Component.
 
 ---
 
+## 2. 직렬화되지 않는 값을 클라이언트 컴포넌트로 넘기기
+
+**세션:** S4
+**대상:** `app/serialize/broken/page.tsx`
+
+### 2-1. 함수 전달
+
+```
+Functions cannot be passed directly to Client Components unless you explicitly
+expose it by marking it with "use server". Or maybe you meant to call this
+function rather than return it.
+```
+
+함수 본문은 코드다. 코드와 그것이 붙잡은 클로저는 스트림으로 보낼 수 없다.
+`"use server"` 를 붙이면 예외인데, 함수를 보내는 게 아니라 **그 함수를 가리키는 ID**를
+보내기 때문이다 (Server Actions). 코드는 여전히 서버에 있다.
+
+### 2-2. 클래스 인스턴스 전달
+
+```
+Only plain objects, and a few built-ins, can be passed to Client Components
+from Server Components. Classes or null prototypes are not supported.
+```
+
+`a few built-ins` — React 가 복원법을 아는 타입 목록이 정해져 있다.
+
+**성공 (타입까지 보존됨)**
+`string` `number` `boolean` `null` `Array` plain object
+`Date` `Map` `Set` `Promise`(use() 로 풀림) JSX 요소
+
+**실패**
+일반 함수, 클래스 인스턴스
+
+### 기준
+
+> **서버와 클라이언트가 이미 공유하고 있는 타입인가**
+
+`Date` 는 양쪽 다 알기 때문에 "Date, 값은 N" 만 보내면 클라이언트가 자기 `Date` 로
+되살린다. `MyClass` 는 클라이언트가 모르므로 `greet()` 를 복원할 방법이 없다.
+
+**데이터는 넘어가고 동작(코드)은 넘어가지 않는다.** 클래스 인스턴스는 둘이 섞여 있다.
+
+"새로 생성한 객체인가"는 기준이 아니다 — `{a:1}` 도 새로 생성한 객체지만 넘어간다.
+
+---
+
 <!-- 새 항목은 아래에 추가한다 -->
