@@ -71,4 +71,37 @@ from Server Components. Classes or null prototypes are not supported.
 
 ---
 
+## 3. 클라이언트 컴포넌트가 서버 컴포넌트를 직접 import
+
+**세션:** S5
+**대상:** `app/composition/wrapper-a/`
+
+```
+<ServerData> is an async Client Component.
+Only Server Components can be async at the moment.
+```
+
+**핵심:** `ServerData` 가 "잘못 쓰인 서버 컴포넌트"가 된 게 아니라 **아예 클라이언트
+컴포넌트가 되어버렸다.** 지시어가 없는 파일은 어디서 import 되느냐로 운명이 갈린다.
+
+증거 3종이 모두 "클라이언트에서 실행됨"을 가리켰다.
+
+| 증거 | A (직접 import) | B (children) |
+|---|---|---|
+| `console.log` | 브라우저 콘솔 | 터미널 |
+| `MY_SECRET` (NEXT_PUBLIC_ 없음) | **안 보임** | 보임 |
+| 에러 | async Client Component | 없음 |
+
+**에러는 결과일 뿐이다.** `async` 를 안 썼다면 에러 없이 조용히 클라이언트에서
+돌았을 것이고 `MY_SECRET` 은 여전히 비어 있었을 것이다. 그쪽이 더 위험하다.
+
+**해법은 `children`으로 넘기기.** 서버가 렌더링한 **결과물**만 경계를 넘는다.
+직렬화 규칙(S4)과 같은 이야기다.
+
+> 주의: dev 모드는 서버 로그를 브라우저 콘솔에도 전달한다. B 에서도 브라우저
+> 콘솔에 로그가 보였다. **로그 위치만으로 실행 위치를 판단하면 안 된다.**
+> A/B 를 가른 진짜 증거는 `MY_SECRET` 이었다. (프로덕션 빌드에서 재확인 필요)
+
+---
+
 <!-- 새 항목은 아래에 추가한다 -->
