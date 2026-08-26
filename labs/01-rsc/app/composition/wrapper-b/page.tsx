@@ -3,12 +3,12 @@ import WrapperB from './WrapperB'
 import ServerData from '../ServerData'
 
 // 이 페이지는 서버 컴포넌트다.
-// ServerData 를 여기서 렌더링하고, 그 결과를 WrapperB 에 children 으로 넘긴다.
+// 같은 ServerData 를 children 과 content 두 경로로 넘겨 차이가 있는지 본다.
 export default function WrapperBPage() {
   return (
     <div style={{ padding: 16 }}>
-      <h1>방식 B — children 으로 넘기기</h1>
-      <WrapperB>
+      <h1>방식 B — prop 으로 넘기기</h1>
+      <WrapperB content={<ServerData />}>
         <ServerData />
       </WrapperB>
       <hr />
