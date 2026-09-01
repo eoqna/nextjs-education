@@ -54,3 +54,62 @@ const body = await request.json()    // 원본은 무사
 ---
 
 <!-- 새 항목은 아래에 추가한다 -->
+## 3. try/catch 가 redirect 를 삼킨다
+
+**세션:** S22
+**대상:** `app/flow/actions.ts`
+
+```ts
+try {
+  await db.save(formData)
+  redirect('/done')          // ← 예외를 던진다
+} catch (e) {
+  return { error: '저장에 실패했습니다' }   // ← 리다이렉트 예외를 여기서 잡아버림
+}
+```
+
+`redirect` / `notFound` / `unauthorized` / `forbidden` 은 **예외를 던져서** 동작한다.
+호출 다음 줄은 실행되지 않는다 (터미널 로그 ②·⑧ 이 안 찍히는 것으로 확인).
+
+따라서 위 코드는 **저장이 성공했는데도** catch 로 빠져서
+"저장에 실패했습니다"를 반환한다. **에러도 안 나고 조용히 잘못 동작한다.**
+
+### 증상
+
+| | 응답 |
+|---|---|
+| 정상 | `200` + `x-action-redirect: /flow/done;push` |
+| try/catch | `200` + `{"error":"저장에 실패했습니다"}` — **헤더 없음** |
+
+### 해법 — `unstable_rethrow`
+
+```ts
+import { unstable_rethrow } from 'next/navigation'
+
+try {
+  redirect('/done')
+} catch (e) {
+  unstable_rethrow(e)   // 프레임워크 내부 예외면 즉시 다시 던진다
+  // 여기부터는 진짜 에러만 온다
+  return { error: '저장에 실패했습니다' }
+}
+```
+
+`catch` 첫 줄에 둔다. 로그 ⑥ 이 안 찍히는 것으로 즉시 재던짐을 확인했다.
+
+### 곁들여 확인한 것 — Server Action 의 리다이렉트는 302 가 아니다
+
+```
+HTTP/1.1 200 OK
+x-action-redirect: /flow/done;push
+content-type: text/x-component
+```
+
+이미 POST 응답 중이라 302 를 보내면 브라우저가 자동으로 따라가버리고,
+클라이언트 사이드 전환이 무의미해진다. 그래서 **200 으로 응답하고 헤더에
+목적지를 실어** 클라이언트 라우터가 처리하게 한다. `;push` 는 히스토리 스택에
+쌓으라는 뜻.
+
+---
+
+<!-- 새 항목은 아래에 추가한다 -->
