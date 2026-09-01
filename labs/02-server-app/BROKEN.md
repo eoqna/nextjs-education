@@ -113,3 +113,78 @@ content-type: text/x-component
 ---
 
 <!-- 새 항목은 아래에 추가한다 -->
+## 4. Server Action 에 권한 체크가 없다 ★
+
+**세션:** S23
+**대상:** `app/security/actions.ts`
+
+### 공격
+
+로그인도, 쿠키도, 버튼 클릭도 없이 사용자 전체를 삭제했다.
+
+```bash
+curl -X POST http://localhost:3000/security \
+  -H "Next-Action: 00af59bd51775d93b5dccfabf31f4b99c75ecf4200" \
+  -H 'Content-Type: text/plain;charset=UTF-8' \
+  --data '[]'
+```
+
+결과: `사용자 (0): (비어 있음)` / `role: guest`
+
+### 착각했던 "보호"
+
+```tsx
+{role === 'admin' && <DeleteButton />}   // 화면을 숨겼을 뿐, 문을 잠근 게 아니다
+```
+
+**Server Action 호출은 page.tsx 를 거치지 않는다.**
+
+```
+브라우저 ──POST (Next-Action: ID)──► 액션 함수 직접 실행
+                                      ↑ page 의 검사를 통과하지 않음
+```
+
+### 액션 ID 는 비밀이 아니다
+
+클라이언트가 그 ID 로 서버를 호출하므로 **ID 는 클라이언트 코드 안에 있다.**
+브라우저에서 JS 를 열면 보인다. 해시는 보안 장치가 아니라 함수 이름 대신 쓰는
+식별자일 뿐이다. (이번엔 `.next/dev/server/server-reference-manifest.json` 에서 찾았다)
+
+### 해법 — 액션 안에서 직접 확인
+
+```ts
+export async function deleteAllUsersSafe() {
+  const role = await getRole()                        // ← 액션 내부에서
+  if (role !== 'admin') {
+    return { ok: false, error: '권한 없음' }
+  }
+  // ...
+}
+```
+
+같은 공격을 두 액션에 동시에 날린 결과:
+
+```
+💀 deleteAllUsers 실행됨 — 권한 확인 없이        ← 뚫림
+🔒 deleteAllUsersSafe — 요청자 role: guest
+🔒 거부됨                                         ← 막힘
+```
+
+### 원칙
+
+> **모든 Server Action 은 인증 없는 공개 API 엔드포인트다.**
+> 각 액션이 자기 문을 스스로 잠가야 한다.
+
+### S5 와 같은 원리
+
+| | 감춘 것 | 실제 |
+|---|---|---|
+| S5 | `{open && children}` | 닫아둬도 서버는 이미 실행 |
+| S23 | `{role === 'admin' && <Btn/>}` | 안 보여줘도 호출 가능 |
+
+**렌더링 여부와 실행 가능 여부는 별개다.** 같은 원리가 성능 문제로도,
+보안 구멍으로도 나타난다.
+
+---
+
+<!-- 새 항목은 아래에 추가한다 -->
