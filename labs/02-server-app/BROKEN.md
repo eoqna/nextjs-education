@@ -188,3 +188,61 @@ export async function deleteAllUsersSafe() {
 ---
 
 <!-- 새 항목은 아래에 추가한다 -->
+## 5. 서버 컴포넌트에서 쿠키·헤더 쓰기
+
+**세션:** S25
+**대상:** `app/cookie-lab/page.tsx`
+
+```
+❌ ReadonlyRequestCookiesError
+   Cookies can only be modified in a Server Action or Route Handler.
+
+❌ ReadonlyHeadersError
+   Headers cannot be modified.
+```
+
+타입 이름이 답을 담고 있다 — **Readonly**RequestCookies.
+서버 컴포넌트가 받는 것은 **읽기 전용 사본**이다.
+
+### 왜 — 권한이 아니라 타이밍
+
+```
+HTTP/1.1 200 OK
+Set-Cookie: theme=dark        ← 헤더가 먼저 전송된다
+Content-Type: text/html
+                              ← 빈 줄로 헤더 구간 종료
+<html>...                     ← 서버 컴포넌트는 여기를 만드는 중
+```
+
+서버 컴포넌트가 실행될 때는 **헤더 구간이 이미 지나갔다.** body 는 스트리밍이라
+일부가 브라우저에 도착했을 수도 있다. 되돌아가서 헤더를 끼워넣을 방법이 없다.
+
+### 그래서 되는 곳
+
+| 위치 | 왜 되나 |
+|---|---|
+| **Server Action** | 응답을 아직 시작하지 않았다. 액션이 끝난 뒤 응답이 만들어진다 |
+| **Route Handler** | `Response` 를 직접 만들어 반환한다. 헤더를 포함해서 통째로 |
+
+검증:
+
+```
+GET /api/set-cookie?theme=blue
+  → set-cookie: theme=blue; Path=/       Route Handler 쓰기 성공
+  → 이후 서버 컴포넌트에서 theme: blue    읽기 성공
+```
+
+### 클라이언트에서 쓰면 안 되나
+
+`document.cookie` 로 쓸 수는 있다. 다만 **`HttpOnly` 쿠키는 그렇게 만들 수 없다**
+(S16 — HttpOnly 는 JS 접근을 막는다). 세션 쿠키를 클라이언트에서 만든다면
+그건 이미 안전하지 않다는 뜻이다.
+
+### 연결
+
+S15 "body 는 스트림" → S3 "서버가 응답을 조각내어 보낸다" → 여기.
+**응답이 이미 흐르기 시작했다**는 하나의 사실이 세 곳에서 다른 얼굴로 나타난다.
+
+---
+
+<!-- 새 항목은 아래에 추가한다 -->
