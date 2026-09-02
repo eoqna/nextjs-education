@@ -308,3 +308,68 @@ POST /security  (쿠키 없음)  →  403 {"error":"proxy 가 막았다"}
 ---
 
 <!-- 새 항목은 아래에 추가한다 -->
+## 7. 클라이언트 컴포넌트에서 서버 전용 env 읽기 ★
+
+**세션:** S27
+**대상:** `app/env-lab/ClientEnv.tsx`
+
+### 빌드 산출물에서 확인한 것
+
+클라이언트 번들에 남은 코드:
+
+```js
+let e = t.default.env.DB_PASSWORD,        // ← 치환 안 됨. 런타임 조회로 남는다
+    n = "https://api.example.com";        // ← 값 문자열로 치환됨
+```
+
+```
+빌드 타임
+  NEXT_PUBLIC_*   →  값 문자열로 치환. JS 파일 안에 박힌다
+  그 외           →  치환하지 않는다. process.env.X 조회 코드가 그대로 남는다
+
+런타임
+  서버(SSR)        →  process.env 가 실제로 존재 → 값이 읽힌다
+  브라우저          →  process.env 가 없다 → undefined
+```
+
+### 함정
+
+| | 결과 |
+|---|---|
+| JS 번들에서 `super_secret_123` | **0회** — 안전해 보인다 |
+| HTML 에서 `super_secret_123` | **3개** — 실제로는 노출됐다 |
+
+**클라이언트 컴포넌트도 최초 요청 때는 서버에서 한 번 렌더링된다.**
+그때 `process.env` 가 읽히고, 그 결과가 HTML 로 브라우저에 간다.
+번들만 확인하면 안전하다고 착각하기 쉽다.
+
+게다가 하이드레이션 후에는 `undefined` 가 되므로 값이 사라지거나
+불일치 경고가 날 수 있다.
+
+문서의 *"replaces them with an empty string"* 은 **클라이언트 번들에 한한 이야기**다.
+
+### 규칙
+
+> 서버 전용 값은 **클라이언트 컴포넌트에서 아예 읽지 않는다.**
+> `NEXT_PUBLIC_` 을 붙이면 번들에 박히고, 안 붙이면 SSR 로 새어나간다.
+> 둘 다 노출이다.
+
+서버 컴포넌트에서 읽어서 **필요한 부분만 가공해 넘기거나**, `server-only` 패키지로
+클라이언트 import 자체를 빌드 타임에 막는다 (S5 문서에서 본 방법).
+
+### 곁들여 — 빌드에서만 잡히는 타입 에러
+
+dev 에서 통과하던 코드가 `next build` 에서 막혔다.
+
+```
+<form action={createPost}> 의 액션이 Promise<{ok:boolean}> 를 반환하는데
+form action 은 void | Promise<void> 를 요구
+```
+
+**`<form action={}>` 에 넘기는 액션은 값을 반환하면 안 된다.**
+반환값이 필요하면 `useActionState` 를 쓴다 (S21).
+**dev 만 믿으면 안 된다** — 배포 직전에 처음 보게 된다.
+
+---
+
+<!-- 새 항목은 아래에 추가한다 -->

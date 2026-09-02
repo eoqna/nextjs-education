@@ -22,8 +22,8 @@ export default async function CookieLabPage() {
   // headers 쓰기도 시도
   let headerWrite = ''
   try {
-    // @ts-expect-error 런타임 동작 확인용
-    h.set('x-custom', 'hi')
+    // headers() 는 ReadonlyHeaders 를 반환하지만 런타임 동작을 보기 위해 우회한다
+    ;(h as unknown as Headers).set('x-custom', 'hi')
     headerWrite = '✅ 쓰기 성공 (예상 밖)'
   } catch (e) {
     headerWrite = `❌ ${(e as Error).constructor.name} — ${(e as Error).message}`

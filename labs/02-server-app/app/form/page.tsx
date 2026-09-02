@@ -19,7 +19,14 @@ export default async function FormPage() {
           이 폼에는 <code>&apos;use client&apos;</code> 가 어디에도 없다. JS 를 꺼도
           동작하는지 확인할 것.
         </p>
-        <form action={createPost}>
+        <form
+          action={async (formData: FormData) => {
+            'use server'
+            // form action 은 void 를 반환해야 한다.
+            // 반환값이 필요하면 useActionState 를 쓴다 (아래 B 참고)
+            await createPost(formData)
+          }}
+        >
           <input name="title" placeholder="제목" />
           <button>생성 (JS 없이도?)</button>
         </form>
