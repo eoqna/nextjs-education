@@ -124,7 +124,7 @@ content-type: text/x-component
 
 ```bash
 curl -X POST http://localhost:3000/security \
-  -H "Next-Action: 00af59bd51775d93b5dccfabf31f4b99c75ecf4200" \
+  -H "Next-Action: 00d6858945626c962ace20b69f00e0c2a2d8a3e88e" \
   -H 'Content-Type: text/plain;charset=UTF-8' \
   --data '[]'
 ```
@@ -149,6 +149,9 @@ curl -X POST http://localhost:3000/security \
 클라이언트가 그 ID 로 서버를 호출하므로 **ID 는 클라이언트 코드 안에 있다.**
 브라우저에서 JS 를 열면 보인다. 해시는 보안 장치가 아니라 함수 이름 대신 쓰는
 식별자일 뿐이다. (이번엔 `.next/dev/server/server-reference-manifest.json` 에서 찾았다)
+
+> 정정: 처음 기록한 ID `00af59bd…` 는 `getUsers` 였다. 실제 삭제 액션은
+> `00d68589…`. 당시엔 6개를 전부 호출해서 공격 자체는 성공했다. (S26 에서 확인)
 
 ### 해법 — 액션 안에서 직접 확인
 
@@ -242,6 +245,65 @@ GET /api/set-cookie?theme=blue
 
 S15 "body 는 스트림" → S3 "서버가 응답을 조각내어 보낸다" → 여기.
 **응답이 이미 흐르기 시작했다**는 하나의 사실이 세 곳에서 다른 얼굴로 나타난다.
+
+---
+
+<!-- 새 항목은 아래에 추가한다 -->
+## 6. proxy.ts 를 인증의 유일한 방어선으로 삼기
+
+**세션:** S26
+
+### 확인된 것
+
+**proxy 는 요청이 라우트에 도달하기 전에 실행된다.**
+
+```
+요청 ──► proxy ──► 라우트(페이지 / Route Handler / Server Action) ──► 응답
+         ↑ 아직 아무것도 렌더링되지 않음
+```
+
+그래서 **쿠키를 쓸 수 있다.** 어제(S25) 세운 기준 그대로다.
+
+```
+"응답이 시작되기 전인가?"
+  Server Action  ✅        Route Handler  ✅
+  proxy          ✅        서버 컴포넌트  ❌
+```
+
+검증: `set-cookie: proxy-stamp=67098; Path=/`
+
+**모든 요청에 실행된다.** 페이지·Route Handler·정적 파일(`/next.svg`,
+`/favicon.ico`) 전부. `matcher` 로 제한하지 않으면 이미지 하나 요청할 때마다 돈다.
+→ **proxy 안에서 DB 조회를 하면 안 되는 이유.**
+
+**Server Action 호출도 proxy 를 거친다.**
+
+```
+🚧 proxy — POST /security  [Action]
+```
+
+S23 에서 page 는 안 거쳤지만 proxy 는 거친다. `matcher` 안이면 실제로 차단된다:
+
+```
+POST /security  (쿠키 없음)  →  403 {"error":"proxy 가 막았다"}
+```
+
+### 그래도 유일한 방어선으로 삼으면 안 되는 이유
+
+**`matcher` 범위가 곧 방어 범위다.** 경로 하나를 빠뜨리면 그만큼 구멍이 난다.
+그리고 proxy 는 모든 요청에 실행되므로 무거운 권한 확인(DB 조회)을 넣기 어렵고,
+보통 "세션 쿠키가 있는가" 정도만 본다 — **인증(누구인가)은 되지만
+인가(무엇을 할 수 있는가)는 못 한다.**
+
+> proxy 는 **1차 필터**다. 실제 방어는 **각 Server Action / Route Handler 안에서**
+> 한다 (S23).
+
+### 미확인으로 남은 것
+
+`matcher` 밖 URL 로 같은 액션 ID 를 POST 하면 우회되는가?
+→ 응답이 `{}` 로 와서 **액션이 실행되지 않은 것으로 보이나** 확정하지 못했다.
+   (복구 액션 호출이 실패해 초기 상태가 불명확했다)
+   Next.js 가 라우트별로 액션 ID 를 검증하는지 다시 확인할 것.
 
 ---
 
