@@ -373,3 +373,61 @@ form action 은 void | Promise<void> 를 요구
 ---
 
 <!-- 새 항목은 아래에 추가한다 -->
+## 8. Draft Mode 를 검증 없이 여는 Route Handler
+
+**세션:** S28
+
+### 확인한 것 — 정적 페이지가 동적으로 바뀐다
+
+`/draft-lab` 은 빌드에서 `○ Static` 으로 판정됐다. 그런데:
+
+```
+쿠키 없음   2026-09-02T02:11:54.666Z  (두 번 다 동일 — 빌드 시각 고정)
+Draft 켬    2026-09-02T02:12:17.657Z
+            2026-09-02T02:12:17.688Z  (매번 다름 — 요청마다 렌더링)
+```
+
+발급되는 쿠키 이름이 답이다:
+
+```
+set-cookie: __prerender_bypass=cb4866bf…; Path=/; Secure; HttpOnly; SameSite=none
+```
+
+**prerender 를 bypass 한다** — 빌드 때 만든 HTML 을 건너뛰고 매번 새로 렌더링한다.
+
+> 지금까지 "정적이냐 동적이냐"는 코드가 결정했는데,
+> Draft Mode 는 **요청에 달린 쿠키 하나로 그 판정을 뒤집는다.**
+> 3단계(무엇이 라우트를 dynamic 으로 만드는가)로 이어지는 지점.
+
+### 취약점 — 쿠키만 있으면 누구나 본다
+
+```
+User-Agent 를 attacker/1.0 으로 바꿔도  →  초안 (미발행)  그대로 보임
+```
+
+`HttpOnly; Secure` 라서 JS 로 훔치긴 어렵지만, **값이 새면 그걸로 끝이다.**
+
+```
+S23  액션 ID 만 알면 호출 가능
+S28  bypass 쿠키만 있으면 초안 열람 가능      ← 같은 구조
+```
+
+게다가 `/api/draft` 를 **아무나 호출하면 쿠키를 발급받는다.** 훔칠 필요도 없다.
+
+### 해법 — 시크릿 토큰 검증
+
+```ts
+export async function GET(request: Request) {
+  const secret = new URL(request.url).searchParams.get('secret')
+  if (secret !== process.env.DRAFT_SECRET) {
+    return new Response('Invalid token', { status: 401 })
+  }
+  (await draftMode()).enable()
+}
+```
+
+S23 의 원칙이 그대로다 — **문을 여는 엔드포인트는 자기 문을 스스로 잠근다.**
+
+---
+
+<!-- 새 항목은 아래에 추가한다 -->
