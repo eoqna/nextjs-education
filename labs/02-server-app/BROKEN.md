@@ -480,3 +480,52 @@ Suspense 단위로 부분 대체되지 않는다.
 ---
 
 <!-- 새 항목은 아래에 추가한다 -->
+## 10. 프리렌더 중 에러가 나면 빌드가 실패한다
+
+**세션:** S31
+
+`error.tsx` 가 있어도 **빌드는 막지 못한다.**
+
+```
+Error occurred prerendering page "/stream/error-in-suspense"
+Error: 💥 Suspense 안에서 터진 에러
+  digest: '3606149517'
+Export encountered an error, exiting the build.
+```
+
+```
+dev     요청 시 렌더링 → 에러 → error.tsx 가 잡는다 → 화면에 표시
+build   빌드 타임 정적 생성 → 에러 → 페이지를 만들 수 없다 → 빌드 중단
+```
+
+**`error.tsx` 는 런타임 에러 경계이지 빌드 실패를 막는 장치가 아니다.**
+정적 페이지를 만들려면 빌드 시점에 에러 없이 렌더링돼야 한다.
+
+해결: 해당 라우트를 동적으로 돌리거나(`export const dynamic = 'force-dynamic'`),
+빌드 타임에 에러가 나지 않도록 조건을 분리한다.
+
+> **dev 에서 되던 게 build 에서 막히는 두 번째 사례.**
+> 첫 번째는 S27 의 `<form action={액션}>` 타입 에러.
+> dev 는 요청한 페이지만 컴파일하고, build 는 전체를 한 번에 검사·생성한다.
+
+---
+
+## 11. 프로덕션에서 서버 에러 메시지는 감춰진다
+
+**세션:** S31
+
+```
+                        브라우저 HTML     서버 로그
+"외부 API 응답 없음"         0개       ⨯ Error: 💥 외부 API 응답 없음
+digest                      1개          digest: '741792841'
+```
+
+`throw new Error('DB 연결 실패: postgres://admin:p@ssw0rd@…')` 를 던져도
+접속 정보가 새지 않는다. **모든 서버 에러 메시지가 digest 해시로 대체된다.**
+
+**추적 방법** — 사용자가 신고한 `digest` 와 서버 로그의 `digest` 를 대조한다.
+그래서 해시가 존재한다.
+
+---
+
+<!-- 새 항목은 아래에 추가한다 -->
