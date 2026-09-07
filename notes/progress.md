@@ -1,12 +1,12 @@
 # 진행 상황
 
-새 세션을 시작할 때 이 파일을 먼저 읽는다. 마지막 갱신: 2026-09-04
+새 세션을 시작할 때 이 파일을 먼저 읽는다. 마지막 갱신: 2026-09-07
 
 ## 지금 어디까지 왔나
 
 ```
 ✅ 1단계  RSC 멘탈 모델          S1~S7 (졸업시험 → 재학습 2회 → 절차 3종 확립)
-🔄 2단계  서버 사이드 실행        S15~S31 진행 중
+🔄 2단계  서버 사이드 실행        S15~S34 중 S32 진행 예정
 ⬜ 3단계  PPR · 명시적 캐싱
 ⬜ 4단계  사이드 프로젝트
 ```
@@ -23,30 +23,43 @@
 ✅ S25~S28  런타임 API (cookies·proxy·env·draftMode)
 ✅ S29      6주차 정리 + 설명 산출물 #3
 ✅ S30      스트리밍과 Suspense
-🔄 S31      에러 경계 2종 — catchError          ← 여기서 멈춤
-⬜ S32~33   졸업 시험 · 인증 CRUD
+✅ S31      에러 경계 2종 — error.tsx · catchError
+🔄 S32~33   졸업 시험 · 인증 CRUD               ← 다음
 ⬜ S34      7주차 정리 + 설명 산출물 #4
 ```
 
-## ⚠️ S31 미완 — 다음 세션에서 이것부터
+## 다음 세션 — S32~S33 졸업 시험: 인증 CRUD (2세션)
 
-**브라우저 확인 하나가 남았다.** `catchError` 로 감싼 위젯만 격리되는지.
-
-```
-cd labs/02-server-app && PORT=3100 npm start
-
-localhost:3100/stream/error-in-suspense   격리 없음 (error.tsx 만)
-localhost:3100/stream/isolated            catchError 로 격리
-```
-
-**볼 것:** 2초 뒤 `✅ 정상 — 2초` 가 보이는가
+**시작 전에 4문 예측 카드로 전체 설계를 먼저 적는다.** 코드보다 설계가 먼저다.
 
 ```
-error-in-suspense   안 보인다  →  페이지 전체가 대체됨 (S30 에서 확인 완료)
-isolated            보이면     →  터진 위젯만 대체됨 = S30 숙제 해결
+1. 쿠키 기반 로그인/로그아웃 (HttpOnly 세션 쿠키)
+2. 글 목록 / 상세 / 작성 / 수정 / 삭제
+3. 작성·수정·삭제는 로그인 사용자만 — Server Action 내부에서 검증
+4. proxy.ts 로 /admin 경로 보호
+5. 목록은 스트리밍, 로딩 UI 포함
+6. 저장소는 메모리 배열이나 JSON 파일 (DB 는 4단계)
 ```
 
-서버 HTML 로는 확인 불가 — 에러 UI 는 클라이언트가 그린다.
+문서를 **최소한으로만** 참조하며 구현한다. 막혀서 찾아본 페이지를 기록한다 —
+그 페이지들이 아직 약한 영역이다.
+
+**웜업을 먼저 한다.** S31 종료 퀴즈가 출제되지 않은 채 세션이 끊겼고,
+3일 뒤 실습 상황조차 기억나지 않았다(패턴 ③).
+
+### 밀린 것 — reference 번역
+
+`reference/` 에는 1단계(S1~S3) 문서 6편만 있다. **2단계에서 참조한 문서는 전부 미번역.**
+
+```
+02-guides/streaming                          S30
+01-getting-started/10-error-handling         S31
+03-api-reference/04-functions/catchError     S31
+03-api-reference/03-file-conventions/error   S31
+… 그 외 S15~S29 에서 참조한 문서들
+```
+
+CLAUDE.md 규칙이므로 2단계 정리(S34) 전에 처리한다.
 
 ## 학습 방식 (CLAUDE.md 규칙과 함께 볼 것)
 
@@ -74,12 +87,23 @@ S27  <form action={액션}> 타입 에러
 S31  프리렌더 중 에러 → 빌드 중단
 ```
 
+**③ 3일 지나면 실습 상황이 사라진다 — 2회**
+
+```
+6일차 (8/31)  3일 전 직접 확인한 body 재읽기·HttpOnly 를 둘 다 틀림
+18일차 (9/7)  3일 전 만든 페이지 두 개의 구조와 관찰 결과가 기억나지 않음
+```
+
+본인이 6일차에 적었다 — *"실행 결과를 눈으로 보는 것만으로는 3일을 못 넘긴다.*
+*본 것과 남는 것은 다르다."* 세션 종료 퀴즈와 다음 세션 웜업이 이걸 막는 장치인데,
+S31 은 세션이 중간에 끊겨 퀴즈가 출제되지 않았다.
+
 ## 자산
 
 ```
 notes/decision-procedures.md   판정 절차 3종 ★ 헷갈리면 여기부터
 notes/unlearning.md            CSR 습관 8항목
-notes/wrong-answers.md         오답 23건 (#서버실행 16 / #관찰방법 3 / #rsc경계 3 …)
+notes/wrong-answers.md         오답 25건 (#서버실행 16 / #rsc경계 4 / #프리렌더 4 / #관찰방법 4 …)
 notes/weekly/                  설명 산출물 3편
 labs/01-rsc/BROKEN.md          고장내기 3건
 labs/02-server-app/BROKEN.md   고장내기 11건

@@ -586,7 +586,7 @@ grep -r "내가_넣은_PUBLIC_값" .next/static | head
 
 ## 7주차 — 스트리밍, 에러, 졸업 시험
 
-- [ ] **S30 · 스트리밍과 Suspense**
+- [x] **S30 · 스트리밍과 Suspense**
 
 📖 [Streaming](https://nextjs.org/docs/app/guides/streaming) · [loading.js](https://nextjs.org/docs/app/api-reference/file-conventions/loading)
 
@@ -598,7 +598,7 @@ grep -r "내가_넣은_PUBLIC_값" .next/static | head
 
 ---
 
-- [ ] **S31 · 에러 경계 2종**
+- [x] **S31 · 에러 경계 2종**
 
 📖 [Error Handling](https://nextjs.org/docs/app/getting-started/error-handling) · [catchError](https://nextjs.org/docs/app/api-reference/functions/catchError)
 
